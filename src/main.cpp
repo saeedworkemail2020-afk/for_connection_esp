@@ -1,15 +1,23 @@
 #include <WiFi.h>
 #include <WebSocketsServer.h>
-
+#include <WebServer.h>
 const char* ssid = "ESP32_AP";
 const char* password = "12345678";
 
 WebSocketsServer webSocket = WebSocketsServer(81);
 
 String status = "off";
+WebServer server(80);
 
 int ledPin = 12;
-int counter = 0;
+int sensorNumber = 0;
+void handleData() {
+  String json = "{";
+  json += "\"number\":" + String(sensorNumber);
+  json += "}";
+  
+  server.send(200, "application/json", json);
+}
 
 void onWebSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
   
@@ -49,10 +57,14 @@ void setup() {
 
   webSocket.begin();
   webSocket.onEvent(onWebSocketEvent);
-   
+
+  server.on("/data", HTTP_GET, handleData);
+
+  server.begin();
 }
 
 void loop() {
   webSocket.loop();
-
+    server.handleClient();
+sensorNumber++;
 }
