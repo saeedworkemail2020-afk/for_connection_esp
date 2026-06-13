@@ -1,6 +1,7 @@
 #include <WiFi.h>
 #include <WebSocketsServer.h>
 #include <WebServer.h>
+#include <ArduinoJson.h>
 const char* ssid = "ESP32_AP";
 const char* password = "12345678";
 
@@ -25,14 +26,17 @@ void handleData() {
 
 void onWebSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
   
-  // counter++;
-  //     String text = "Message " + String(counter);
-  //     webSocket.sendTXT(num, text);
-  Serial.println(num);
+  String msg = String((char*)payload);
+
+  StaticJsonDocument<200> doc;
+  deserializeJson(doc, msg);
+
+  String cmd = doc["cmd"];
+
   if (type == WStype_TEXT) {
     String msg = String((char*)payload);
 
-    if (msg == "led") {
+    if (cmd == "led") {
       if (status== "off")
       {
          digitalWrite(ledPin, HIGH);
@@ -48,6 +52,13 @@ void onWebSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t leng
 "}";
 webSocket.sendTXT(num, json);      
     }
+if (cmd =="reset")
+{
+digitalWrite(ledPin, LOW);
+           status="off";
+sensorNumber = 0;
+tuched=0;
+}
 
   }
 }
@@ -92,7 +103,7 @@ void loop() {
         "\",\"touch\":" + String(tuched) +
         "}";
 
-      webSocket.broadcastTXT(json); // بهتر از sendTXT
+      webSocket.broadcastTXT(json); 
     }
 
     waitingForT4 = false;
